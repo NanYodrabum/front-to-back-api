@@ -359,7 +359,40 @@ exports.login = async (req, res, next) => {
 };
 ```
 
-## 13 create use-controllers
+## Step 13 Current-user
+//controllers/auth-controllers
+```js
+exports.currentUser = async (req,res,next) => {
+  try {
+    res.json({ message: "Hello, current user" });
+  } catch (error) {
+    next(error);
+  }
+};
+```
+update code in auth-routes
+//routes/auth-routes
+```js
+const express = require("express");
+const router = express.Router();
+const authControllers = require("../controllers/auth-controllers");
+const { validateWithZod, registerSchema, loginSchema } = require("../middlewears/validator");
+
+// @ENDPOINT http://localhost:8003/api/register
+router.post(
+  "/register",
+  validateWithZod(registerSchema),
+  authControllers.register
+);
+router.post("/login", validateWithZod(loginSchema),authControllers.login);
+
+router.get("/current-user", authControllers.currentUser)
+
+//export
+module.exports = router;
+```
+
+## 14 User controllers and routes
 /controllers/user-controllers
 ```js
 exports.listUsers = async (req, res, next) => {
@@ -385,7 +418,6 @@ exports.deleteUsers = async (req, res, next) => {
 };
 ```
 
-## Step 14 Create User routes
 /routes/user-routes
 ```js
 const express = require("express");
