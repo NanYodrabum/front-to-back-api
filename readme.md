@@ -16,7 +16,7 @@ npx prisma init
 ```bash
 git init
 git add .
-git commit -m "message
+git commit -m "message"
 ```
 
 next step
@@ -27,3 +27,128 @@ git remote add origin https://github.com/NanYodrabum/front-to-back-api.git
 git branch -M main
 git push -u origin main
 ```
+when update code
+```bash
+git add .
+git commit -m "message"
+git push
+```
+## Step 4 update package.json
+```json
+{
+"scripts": {
+    "start" : "nodemon index.js"
+  },
+}
+```
+
+
+
+## Step 5 use middlewears
+```json
+const express = require("express")
+const cors = require("cors")
+const morgan = require("morgan")
+const app = express()
+
+//Middlewears
+app.use(cors()) //Allows cross domain 
+app.use(morgan("dev")) //Show log  terminal
+app.use(express.json()) //For read json
+
+//Routing
+
+//start server
+const PORT = 8003
+app.listen(PORT, () => console.log(`Server is running on port ${PORT}`))
+```
+
+## Step 6 Routing and Controllers [Register]
+/controllers/auth-controllers.js
+```json
+exports.register = (req,res,next) => {
+    try {
+        res.json({message : "Hello register"})
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({message:"Server Error!!"})
+    }
+}
+
+```
+/routes/auth-routes.js
+```json
+const express = require("express")
+const router = express.Router()
+const authControllers = require("../controllers/auth-controllers")
+
+// @ENDPOINT http://localhost:8003/api/register
+router.post("/register", authControllers.register)
+
+//export
+module.exports = router
+```
+
+## Step 7  Routing and Controllers [Login]
+/controllers/auth-controllers.js
+```json
+exports.login = async (req, res, next) => {
+  try {
+   
+    res.json({ message: "Hello Login" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Server Error!!" });
+  }
+};
+```
+/routes/auth-routes.js
+```json
+const express = require("express")
+const router = express.Router()
+const authControllers = require("../controllers/auth-controllers")
+
+// @ENDPOINT http://localhost:8003/api/register
+router.post("/register", authControllers.register)
+router.post("/login",authControllers.login)
+
+//export
+module.exports = router
+```
+## Step 8 Create handle Error
+/middlewears/error.js
+```json
+const handleErrors = (err, req, res, next) => {
+  res
+    .status(err.statusCode || 500)
+    .json({ message: err.message || "Something wrong!!" });
+};
+
+module.exports = handleErrors;
+```
+and use in index.js
+```json
+const handleErrors = require("./middlewears/error")
+
+//Handle errors
+app.use(handleErrors)
+```
+
+and change in try catch
+```json
+exports.login = async (req, res, next) => {
+  try {
+    res.json({ message: "Hello Login" });
+  } catch (error) {
+    next(error)
+  }
+}
+```
+
+when update code in Github
+```bash
+git add .
+git commit -m "message"
+git push
+```
+
