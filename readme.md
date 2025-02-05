@@ -41,9 +41,6 @@ git push
   },
 }
 ```
-
-
-
 ## Step 5 use middlewears
 ```js
 const express = require("express")
@@ -145,9 +142,175 @@ exports.login = async (req, res, next) => {
 ```
 
 when update code in Github
-```bash
+```js
 git add .
 git commit -m "message"
 git push
 ```
+
+## Step 9 Create Error 
+/utils/createError.jd
+```js
+const handleErrors = (err, req, res, next) => {
+  res
+    .status(err.statusCode || 500)
+    .json({ message: err.message || "Something wrong!!" });
+};
+
+module.exports = handleErrors;
+```
+## Step 10 Validator with Zod
+/controllers/validators.js
+```js
+const { z } = require("zod");
+//npm i zod
+//Test validator
+exports.registerSchema = z
+  .object({
+    email: z.string().email("Email is not correct"),
+    firstname: z.string().min(3, "Firstname should be more than 3 characters"),
+    lastname: z.string().min(3, "Lastname should be more than 3 characters"),
+    password: z.string().min(6, "Password should be more than 6 characters"),
+    confirmPassword: z
+      .string()
+      .min(6, "ConfirmPassword should be more than 6 characters"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Confirm Password is not the same",
+    path: ["confirmPassword"],
+  });
+
+exports.loginSchema = z.object({
+  email: z.string().email("Email is not correct"),
+  password: z.string().min(6, "Password should be more than 6 characters"),
+});
+
+exports.validateWithZod = (schema) => (req, res, next) => {
+  try {
+    console.log("Hello middlewear");
+    schema.parse(req.body);
+    next();
+  } catch (error) {
+    const errMsg = error.errors.map((item) => item.message);
+    const errTxt = errMsg.join(",");
+    const mergeError = new Error(errTxt);
+    next(mergeError);
+  }
+};
+```
+and then update code
+/routes/auth-routes.js
+```js
+const express = require("express");
+const router = express.Router();
+const authControllers = require("../controllers/auth-controllers");
+const { validateWithZod, registerSchema, loginSchema } = require("../middlewears/validator");
+
+// @ENDPOINT http://localhost:8003/api/register
+router.post(
+  "/register",
+  validateWithZod(registerSchema),
+  authControllers.register
+);
+router.post("/login", validateWithZod(loginSchema),authControllers.login);
+
+//export
+module.exports = router;
+```
+
+## Step 10 Create Database
+Install Prisma
+```bash
+npx prisma migrate dev --name init
+```
+
+.env
+```bash
+DATABASE_URL="mysql://root:@Paul1710@localhost:3306/landmark"
+```
+
+/prisma/schema.prisma
+```js
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Profile {
+  id        Int      @id @default(autoincrement())
+  email     String
+  firstname String
+  lastname  String
+  role      Role     @default(USER)
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+```
+## Step 11  Config PrismaClient /bcryptjs hash password
+/configs/prisma.js
+```js
+const { PrismaClient } = require("@prisma/client");
+
+const prisma = new PrismaClient();
+
+module.exports = prisma;
+```
+update code
+Register
+/controllers/auth-controllers
+```js
+const prisma = require("../configs/prisma");
+const createError = require("../utils/createError");
+const bcrypt = require("bcryptjs");
+
+exports.register = async (req, res, next) => {
+  try {
+    //code
+    //Step 1 req.body
+    const { email, firstname, lastname, password, confirmPassword } = req.body;
+    //Step 2 validate
+    //Step 3 Check already
+    const checkEmail = await prisma.profile.findFirst({
+      where: {
+        email: email,
+      },
+    });
+    console.log(checkEmail);
+    if (checkEmail) {
+      return createError(400, "Email is already exists!!!");
+    }
+    //Step 4 Encrypt bcrypt
+    // const salt = bcrypt.genSaltSync(10)
+    const hashedPassword = bcrypt.hashSync(password, 10);
+    console.log(hashedPassword);
+    //Step 5 Insert to DB
+    const profile = await prisma.profile.create({
+      data: {
+        email: email,
+        firstname: firstname,
+        lastname: lastname,
+        password: hashedPassword,
+      },
+    });
+    //Step 6 Response
+    res.json({ message: "Hello register" });
+  } catch (error) {
+    console.log("Step 2 Catch");
+    next(error);
+  }
+};
+```
+
+
+## Step 12 
 

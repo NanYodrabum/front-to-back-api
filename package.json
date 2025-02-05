@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@prisma/client": "^6.3.1",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "express": "^4.21.2",
@@ -13,9 +14,8 @@
   "version": "1.0.0",
   "description": "## Step 1 create package  ```bash npm init -y ``` ## Step 2 install package... ```bash npm install express nodemon cors morgan bcryptjs jsonwebtoken zod prisma ```",
   "main": "index.js",
-  "devDependencies": {},
   "scripts": {
-    "start" : "nodemon index.js"
+    "start": "nodemon index.js"
   },
   "keywords": [],
   "author": "",
