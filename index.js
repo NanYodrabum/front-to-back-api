@@ -6,6 +6,7 @@ const handleErrors = require("./middlewears/error")
 
 //Routing
 const authRouter = require("./routes/auth-routes")
+const userRouter = require("./routes/user-routes")
 
 //Middlewears
 app.use(cors()) //Allows cross domain 
@@ -13,7 +14,8 @@ app.use(morgan("dev")) //Show log  terminal
 app.use(express.json()) //For read json
 
 //Routing
-app.use("/api", authRouter)
+app.use("/api",authRouter)
+app.use("/api",userRouter)
 
 
 //Handle errors

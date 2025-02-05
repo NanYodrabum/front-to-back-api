@@ -311,6 +311,123 @@ exports.register = async (req, res, next) => {
 };
 ```
 
+## Step 12  Update Login with jsonwebtoken
+/controllers/auth-controllers.js
+```js
+exports.login = async (req, res, next) => {
+  try {
+    //Step 1 req.body
+    const { email, password } = req.body;
+    //Step 2 check email and password
+    const profile = await prisma.profile.findFirst({
+      where: {
+        email: email,
+      },
+    });
+    if (!profile) {
+      return createError(400, "Email, Password is invalid!!");
+    }
 
-## Step 12 
+    const isMatch = bcrypt.compareSync(password, profile.password);
+
+    if (!isMatch) {
+      return createError(400, "Email, Password is invalid!!");
+    }
+    //Step 3 Generate token
+    const payload = {
+      id: profile.id,
+      email: profile.email,
+      firstname: profile.firstname,
+      lastname: profile.lastname,
+      role: profile.role,
+    };
+
+    const token = jwt.sign(payload, process.env.SECRET, {
+      expiresIn: "1d",
+    });
+
+    console.log(token);
+    //Step 4 Response
+    res.json({
+      message: "Login Success",
+      payload: payload,
+      token: token,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+```
+
+## 13 create use-controllers
+/controllers/user-controllers
+```js
+exports.listUsers = async (req, res, next) => {
+  try {
+    res.json({ message: "Hello, List Users " });
+  } catch (error) {
+    next(error);
+  }
+};
+exports.updateRole = async (req, res, next) => {
+  try {
+    res.json({ message: "Hello, Update Role " });
+  } catch (error) {
+    next(error);
+  }
+};
+exports.deleteUsers = async (req, res, next) => {
+  try {
+    res.json({ message: "Hello, Delete User " });
+  } catch (error) {
+    next(error);
+  }
+};
+```
+
+## Step 14 Create User routes
+/routes/user-routes
+```js
+const express = require("express");
+const router = express.Router();
+const userControllers = require("../controllers/user-controllers");
+
+
+//  @ENDPOINT http://localhost:8003/api/users
+router.get("/users", userControllers.listUsers);
+router.patch("/user/update-role", userControllers.updateRole);
+router.delete("/user/:id", userControllers.deleteUsers);
+module.exports = router;
+```
+
+update code in index.js
+```js
+const express = require("express")
+const cors = require("cors")
+const morgan = require("morgan")
+const app = express()
+const handleErrors = require("./middlewears/error")
+
+//Routing
+const authRouter = require("./routes/auth-routes")
+const userRouter = require("./routes/user-routes")
+
+//Middlewears
+app.use(cors()) //Allows cross domain 
+app.use(morgan("dev")) //Show log  terminal
+app.use(express.json()) //For read json
+
+//Routing
+app.use("/api",authRouter)
+app.use("/api",userRouter)
+
+//Handle errors
+app.use(handleErrors)
+
+//start server
+const PORT = 8003
+app.listen(PORT, () => console.log(`Server is running on port ${PORT}`))
+```
+
+
 

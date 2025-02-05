@@ -11,5 +11,7 @@ router.post(
 );
 router.post("/login", validateWithZod(loginSchema),authControllers.login);
 
+router.get("/current-user", authControllers.currentUser)
+
 //export
 module.exports = router;
