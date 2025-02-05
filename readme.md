@@ -45,7 +45,7 @@ git push
 
 
 ## Step 5 use middlewears
-```json
+```js
 const express = require("express")
 const cors = require("cors")
 const morgan = require("morgan")
@@ -65,7 +65,7 @@ app.listen(PORT, () => console.log(`Server is running on port ${PORT}`))
 
 ## Step 6 Routing and Controllers [Register]
 /controllers/auth-controllers.js
-```json
+```js
 exports.register = (req,res,next) => {
     try {
         res.json({message : "Hello register"})
@@ -74,10 +74,9 @@ exports.register = (req,res,next) => {
         res.status(500).json({message:"Server Error!!"})
     }
 }
-
 ```
 /routes/auth-routes.js
-```json
+```js
 const express = require("express")
 const router = express.Router()
 const authControllers = require("../controllers/auth-controllers")
@@ -91,7 +90,7 @@ module.exports = router
 
 ## Step 7  Routing and Controllers [Login]
 /controllers/auth-controllers.js
-```json
+```js
 exports.login = async (req, res, next) => {
   try {
    
@@ -103,7 +102,7 @@ exports.login = async (req, res, next) => {
 };
 ```
 /routes/auth-routes.js
-```json
+```js
 const express = require("express")
 const router = express.Router()
 const authControllers = require("../controllers/auth-controllers")
@@ -117,7 +116,7 @@ module.exports = router
 ```
 ## Step 8 Create handle Error
 /middlewears/error.js
-```json
+```js
 const handleErrors = (err, req, res, next) => {
   res
     .status(err.statusCode || 500)
@@ -127,7 +126,7 @@ const handleErrors = (err, req, res, next) => {
 module.exports = handleErrors;
 ```
 and use in index.js
-```json
+```js
 const handleErrors = require("./middlewears/error")
 
 //Handle errors
@@ -135,7 +134,7 @@ app.use(handleErrors)
 ```
 
 and change in try catch
-```json
+```js
 exports.login = async (req, res, next) => {
   try {
     res.json({ message: "Hello Login" });
