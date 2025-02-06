@@ -218,7 +218,7 @@ router.post("/login", validateWithZod(loginSchema),authControllers.login);
 module.exports = router;
 ```
 
-## Step 10 Create Database
+## Step 11 Create Database
 Install Prisma
 ```bash
 npx prisma migrate dev --name init
@@ -256,7 +256,7 @@ enum Role {
   ADMIN
 }
 ```
-## Step 11  Config PrismaClient /bcryptjs hash password
+## Step 12  Config PrismaClient /bcryptjs hash password
 /configs/prisma.js
 ```js
 const { PrismaClient } = require("@prisma/client");
@@ -311,7 +311,7 @@ exports.register = async (req, res, next) => {
 };
 ```
 
-## Step 12  Update Login with jsonwebtoken
+## Step 13  Update Login with jsonwebtoken
 /controllers/auth-controllers.js
 ```js
 exports.login = async (req, res, next) => {
@@ -359,7 +359,7 @@ exports.login = async (req, res, next) => {
 };
 ```
 
-## Step 13 Current-user
+## Step 14 Current-user
 //controllers/auth-controllers
 ```js
 exports.currentUser = async (req,res,next) => {
@@ -392,26 +392,50 @@ router.get("/current-user", authControllers.currentUser)
 module.exports = router;
 ```
 
-## 14 User controllers and routes
+## Step 15 User controllers and routes
 /controllers/user-controllers
 ```js
+const prisma = require("../configs/prisma");
+//1.List all users
+//2.Update Role
+//3.Delete User
+
 exports.listUsers = async (req, res, next) => {
   try {
-    res.json({ message: "Hello, List Users " });
+    const users = await prisma.profile.findMany({
+      // omit คือคำสั่งที่ไม่เอาข้อมูล column นั้นๆ
+      omit: {
+        password: true,
+      },
+    });
+    // console.log(users);
+    res.json({ result: users });
   } catch (error) {
     next(error);
   }
 };
 exports.updateRole = async (req, res, next) => {
   try {
-    res.json({ message: "Hello, Update Role " });
+    const { id, role } = req.body;
+    console.log(id, role);
+    const updated = await prisma.profile.update({
+      where: { id: Number(id) },
+      data: { role: role },
+    });
+
+    res.json({ message: "Update Role Success" });
   } catch (error) {
     next(error);
   }
 };
 exports.deleteUsers = async (req, res, next) => {
   try {
-    res.json({ message: "Hello, Delete User " });
+    const { id } = req.params;
+    const deleted = await prisma.profile.delete({
+      where: { id: Number(id) },
+    });
+    console.log(id);
+    res.json({ message: "Delete Success" });
   } catch (error) {
     next(error);
   }
@@ -461,5 +485,74 @@ const PORT = 8003
 app.listen(PORT, () => console.log(`Server is running on port ${PORT}`))
 ```
 
+## Step 16 Create auth-middleware
+middlewears/auth-middleware
+```js
+const createError = require("../utils/createError");
+const jwt = require("jsonwebtoken");
 
+exports.authCheck = async (req, res, next) => {
+  try {
+    //รับ header จาก client
+    const authorization = req.headers.authorization;
+    // Check ถ้าไม่มี token
+    console.log(authorization);
+    if (!authorization) return createError(400, "Missing Token!!!!");
+    // bearer token.... แบ่งด้วยช่องว่างง
+    const token = authorization.split(" ")[1];
 
+    //Verify Token
+    jwt.verify(token, process.env.SECRET, (err, decode) => {
+      console.log(err);
+      console.log(decode);
+      if (err) {
+        return createError(400, "Unauthorized !!");
+      }
+      //สร้าง property user = decode (ข้อมูล user จาก token)
+      req.user = decode;
+      next();
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+```
+then update code in auth routes
+routes/auth-routes
+```js
+const express = require("express");
+const router = express.Router();
+const authControllers = require("../controllers/auth-controllers");
+const {authCheck} = require("../middlewears/auth-middleware")
+const { validateWithZod, registerSchema, loginSchema } = require("../middlewears/validator");
+
+// @ENDPOINT http://localhost:8003/api/register
+router.post(
+  "/register",
+  validateWithZod(registerSchema),
+  authControllers.register
+);
+router.post("/login", validateWithZod(loginSchema),authControllers.login);
+
+router.get("/current-user", authCheck, authControllers.currentUser)
+
+//export
+module.exports = router;
+```
+
+the update code in user-routes
+routes/user-routes.js
+```js
+const express = require("express");
+const router = express.Router();
+//import controller
+const userControllers = require("../controllers/user-controllers");
+//import middleware
+const { authCheck } = require("../middlewears/auth-middleware");
+
+//  @ENDPOINT http://localhost:8003/api/users
+router.get("/users", authCheck, userControllers.listUsers);
+router.patch("/user/update-role", authCheck, userControllers.updateRole);
+router.delete("/user/:id", authCheck, userControllers.deleteUsers);
+module.exports = router;
+```
